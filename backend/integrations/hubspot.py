@@ -3,7 +3,7 @@ import secrets
 import json
 import base64
 from fastapi import Request, HTTPException, Form
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 import httpx
 from dotenv import load_dotenv
 from integrations.integration_item import IntegrationItem
@@ -86,7 +86,19 @@ async def oauth2callback_hubspot(request: Request):
         f"hubspot_tokens:{state_data['org_id']}:{state_data['user_id']}", 
         json.dumps(token_info)
     )
-    return token_info
+    return HTMLResponse(content="""
+  <html>
+    <head>
+      <script>
+        window.opener.postMessage("hubspot-auth-success", "*");
+        window.close();
+      </script>
+    </head>
+    <body>
+      <p>HubSpot authentication successful. You can close this window.</p>
+    </body>
+  </html>
+""")
 
 async def get_hubspot_credentials(user_id, org_id):
     credentials_str = await redis_client.get_value_redis(f"hubspot_tokens:{org_id}:{user_id}")
